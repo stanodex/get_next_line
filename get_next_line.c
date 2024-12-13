@@ -1,71 +1,69 @@
-/******************************************************************************/
+/* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
 /*   get_next_line.c                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: hceviz <marvin@42.fr>                      +#+  +:+       +#+        */
+/*   By: hceviz <hceviz@student.42warsaw.pl>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/12/12 14:41:59 by hceviz            #+#    #+#             */
-/*   Updated: 2024/12/13 00:12:34 by hceviz           ###   ########.fr       */
+/*   Created: 2024/12/13 12:14:45 by hceviz            #+#    #+#             */
+/*   Updated: 2024/12/13 19:56:58 by hceviz           ###   ########.fr       */
 /*                                                                            */
-/******************************************************************************/
+/* ************************************************************************** */
 
-#include "get_next_line.h"
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include "get_next_line.h"
 
-//in one calling buffer will decide stash
-char	*create_stash(int fd, char *buff, char *stash)
+//check the effect of static in function
+static char	*read_data(int fd, char *buff, char *stash)
 {
-	//control the cursor location
 	int		read_bytes;
-	char	*temp;
 
 	read_bytes = 1;
-	while (read_bytes > 0)
+	while (!has_newline(buff) && read_bytes != 0)
 	{
 		read_bytes = read(fd, buff, BUFFER_SIZE);
-		if (read_bytes == -1 )
+		if (read_bytes == -1)
 			return (0);
 		else if (read_bytes == 0)
-			break;
+			break ;
 		buff[read_bytes] = '\0';
-		 if (!stash)
-		 	stash = ft_strdup("");
-		temp = stash;
-		stash = ft_strjoin(temp, buff); //what if i use stash = ft_strjoin(stash, buff) -> ask to gpt
-		free(temp); //after free temp will not be exist
-		temp = NULL; // by initializing to null it allows us to check it cuz it is exist
-		if (has_newline(buff))
-		{
-			free(buff);
-			break;
-		}
+		if (!stash)
+			stash = ft_strdup("");
+		stash = ft_strjoin(stash, buff);
 	}
-	//can i free buff in here cuz buff created in get_next_line
 	return (stash);
 }
 
-char	*create_final(char *stash)
+char	*extract(char **stash_ptr)
 {
 	int		i;
-	char	*final;
+	char	*line;
+	char	*stash;
+	char	*temp;
+
 	i = 0;
-	while (stash[i] != '\n')
+	stash = *stash_ptr;
+	while (stash[i] && stash[i] != '\n')
 		i++;
-	final = malloc((i * sizeof(char)) + 1);
-	if (!final)
-		return (NULL);
-	i = 0;
-	while (stash[i] != '\n')
+	if (stash[i] == '\n')
 	{
-		final[i] = stash[i];
-		i++;
+		line = ft_substr(stash, 0, i + 1);
+		line[i] = '\0';
+		temp = ft_strdup(stash + i + 1);
+		free(*stash_ptr);
+		*stash_ptr = temp;
+		free(temp);
 	}
-	final[i] = '\n';
-	free(stash);
-	return (final);
+	else
+	{
+		line = ft_strdup(stash);
+		free(stash);
+		free(*stash_ptr);
+	}
+	return (line);
 }
 
 char	*get_next_line(int fd)
@@ -75,16 +73,38 @@ char	*get_next_line(int fd)
 	char		*res;
 
 	if (fd < 0 || BUFFER_SIZE <= 0)
-		return (NULL);
-	buff = malloc((sizeof(char) * BUFFER_SIZE) + 1);
-	if (!buff)
 		return (0);
-	if (has_newline(create_stash(fd, buff, stash)))
-	{
-		free(buff);
-		return (stash);
-	}
-	res = create_final(create_stash(fd, buff, stash));
+	buff = malloc(BUFFER_SIZE + 1);
+	if (!buff)
+		return (NULL);
+	stash = read_data(fd, buff, stash);
 	free(buff);
+	res = ft_strdup(extract(&stash));
 	return (res);
+}
+
+int main(void)
+{
+    char *line;
+    int fd;
+	int x = 3;
+
+    // Test 1: Valid file with multiple lines
+    printf("Test 1: Reading from a valid file (sample.txt)\n");
+    fd = open("sample.txt", O_RDONLY);
+    if (fd == -1)
+    {
+        perror("Error opening sample.txt");
+        return (1);
+    }
+
+    int line_number = 1;
+	line = get_next_line(fd);
+    while (x > 0)
+    {
+        printf("Line %d: %s", line_number++, line);
+		x--;
+	}
+    close(fd);
+	return (1);
 }
