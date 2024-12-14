@@ -1,14 +1,14 @@
-/* ************************************************************************** */
+/******************************************************************************/
 /*                                                                            */
 /*                                                        :::      ::::::::   */
 /*   get_next_line.c                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: hceviz <hceviz@student.42warsaw.pl>        +#+  +:+       +#+        */
+/*   By: hceviz <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/13 12:14:45 by hceviz            #+#    #+#             */
-/*   Updated: 2024/12/13 19:56:58 by hceviz           ###   ########.fr       */
+/*   Updated: 2024/12/14 15:48:57 by hceviz           ###   ########.fr       */
 /*                                                                            */
-/* ************************************************************************** */
+/******************************************************************************/
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -17,72 +17,114 @@
 #include "get_next_line.h"
 
 //check the effect of static in function
-static char	*read_data(int fd, char *buff, char *stash)
+//buff[read_bytes] is for providing an end in strjoin while loop
+//otherwise there will not be any null terminator so strjoin will iterate infinitively
+//and also in some cases read() might read bytes less than buffer size
+//so buff[read_bytes] ensures that only the valid portion of the buffer is treated as a string
+//and in every while loop we check !strchr(buff, '\n') so if we dont null termianate buff,
+//strchr will iterate it infinitively
+static char	*get_myline(int fd, char *stash)
 {
 	int		read_bytes;
+	char	*buff;
 
 	read_bytes = 1;
-	while (!has_newline(buff) && read_bytes != 0)
+	buff = malloc(BUFFER_SIZE + 1);
+	if (!buff)
+		return (NULL);
+	while (!ft_strchr(buff, '\n') && read_bytes != 0)
 	{
 		read_bytes = read(fd, buff, BUFFER_SIZE);
 		if (read_bytes == -1)
-			return (0);
-		else if (read_bytes == 0)
-			break ;
+		{
+			free(stash);
+			free(buff);
+			return (NULL);
+		}
 		buff[read_bytes] = '\0';
 		if (!stash)
 			stash = ft_strdup("");
 		stash = ft_strjoin(stash, buff);
 	}
+	free(buff);
 	return (stash);
 }
 
-char	*extract(char **stash_ptr)
+char	*return_myline(char *stash)
 {
-	int		i;
 	char	*line;
-	char	*stash;
-	char	*temp;
+	size_t	i;
 
 	i = 0;
-	stash = *stash_ptr;
+	if (!stash[0])
+		return (NULL);
 	while (stash[i] && stash[i] != '\n')
 		i++;
 	if (stash[i] == '\n')
+		i++;
+	line = malloc(i + 1);
+	if (!line)
+		return (NULL);
+	i = 0;
+	while (stash[i] && stash[i] != '\n')
 	{
-		line = ft_substr(stash, 0, i + 1);
-		line[i] = '\0';
-		temp = ft_strdup(stash + i + 1);
-		free(*stash_ptr);
-		*stash_ptr = temp;
-		free(temp);
+		line[i] = stash[i];
+		i++;
 	}
-	else
-	{
-		line = ft_strdup(stash);
-		free(stash);
-		free(*stash_ptr);
-	}
+	if (stash[i] == '\n')
+		line[i++] = '\n';
+	line[i] = '\0';
 	return (line);
+}
+
+
+char	*after_new_line(char *stash)
+{
+	char	*after;
+	size_t	i;
+	size_t	j;
+
+	i = 0;
+	if (!stash)
+		return (NULL);
+	while (stash[i] && stash[i] != '\n')
+		i++;
+	if (stash[i] == '\0')
+	{
+		free(stash);
+		return (NULL);
+	}
+	after = malloc(ft_strlen(stash) - i);
+	if (!after)
+		return (NULL);
+	if (stash[i] == '\n')
+		i++;
+	j = 0;
+	while (stash[i + j])
+	{
+		after[j] = stash[i + j];
+		j++;
+	}
+	//after[j] = '\0';
+	return (after);
 }
 
 char	*get_next_line(int fd)
 {
 	static char	*stash;
-	char		*buff;
-	char		*res;
+	char		*line;
 
 	if (fd < 0 || BUFFER_SIZE <= 0)
-		return (0);
-	buff = malloc(BUFFER_SIZE + 1);
-	if (!buff)
 		return (NULL);
-	stash = read_data(fd, buff, stash);
-	free(buff);
-	res = ft_strdup(extract(&stash));
-	return (res);
+	stash = get_myline(fd, stash);
+	if (!stash)
+		return (NULL);
+	line = return_myline(stash);
+	stash = after_new_line(stash);
+	return (line);
 }
 
+/*
 int main(void)
 {
     char *line;
@@ -99,12 +141,12 @@ int main(void)
     }
 
     int line_number = 1;
-	line = get_next_line(fd);
     while (x > 0)
     {
+		line = get_next_line(fd);
         printf("Line %d: %s", line_number++, line);
 		x--;
 	}
     close(fd);
 	return (1);
-}
+}*/

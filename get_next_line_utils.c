@@ -1,32 +1,16 @@
-/* ************************************************************************** */
+/******************************************************************************/
 /*                                                                            */
 /*                                                        :::      ::::::::   */
 /*   get_next_line_utils.c                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: hceviz <hceviz@student.42warsaw.pl>        +#+  +:+       +#+        */
+/*   By: hceviz <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/13 12:38:20 by hceviz            #+#    #+#             */
-/*   Updated: 2024/12/13 18:27:27 by hceviz           ###   ########.fr       */
+/*   Updated: 2024/12/14 14:30:26 by hceviz           ###   ########.fr       */
 /*                                                                            */
-/* ************************************************************************** */
+/******************************************************************************/
 
 #include "get_next_line.h"
-
-int	has_newline(char *stash)
-{
-	int	i;
-
-	i = 0;
-	if (!stash)
-		return (0);
-	while (stash[i])
-	{
-		if (stash[i] == '\n')
-			return (1);
-		i++;
-	}
-	return (0);
-}
 
 char	*ft_strdup(char *s)
 {
@@ -48,9 +32,9 @@ char	*ft_strdup(char *s)
 	return (arr);
 }
 
-int	ft_strlen(char *s)
+size_t	ft_strlen(char *s)
 {
-	int	len;
+	size_t	len;
 
 	len = 0;
 	while (s[len] != '\0')
@@ -94,43 +78,4 @@ char	*ft_strchr(char *s, int c)
 	if (c == '\0')
 		return ((char *)s);
 	return (0);
-}
-
-size_t	ft_strlcpy(char *dst, char *src, size_t size)
-{
-	size_t	src_len;
-
-	src_len = ft_strlen(src);
-	if (!size || !src)
-		return (src_len);
-	while (*src && --size)
-	{
-		*dst = *src;
-		src++;
-		dst++;
-	}
-	*dst = '\0';
-	return (src_len);
-}
-
-char	*ft_substr(char *s, int start, int len)
-{
-	char	*ptr;
-	char	*res;
-	int		i;
-
-	if (!s)
-		return (NULL);
-	if (start > ft_strlen(s))
-		return (ft_strdup(""));
-	ptr = (char *)s + start;
-	if (ft_strlen(ptr) < len)
-		i = ft_strlen(ptr) + 1;
-	else
-		i = len + 1;
-	res = malloc(i);
-	if (!res)
-		return (NULL);
-	ft_strlcpy(res, ptr, i);
-	return (res);
 }
