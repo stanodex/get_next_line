@@ -1,36 +1,16 @@
-/******************************************************************************/
+/* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
 /*   get_next_line_utils.c                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: hceviz <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/12/13 12:38:20 by hceviz            #+#    #+#             */
-/*   Updated: 2024/12/14 14:30:26 by hceviz           ###   ########.fr       */
+/*   Created: 2024/12/15 17:20:01 by hceviz            #+#    #+#             */
+/*   Updated: 2024/12/15 17:51:18 by hceviz           ###   ########.fr       */
 /*                                                                            */
-/******************************************************************************/
+/* ************************************************************************** */
 
 #include "get_next_line.h"
-
-char	*ft_strdup(char *s)
-{
-	char	*arr;
-	int		len;
-	int		i;
-
-	i = 0;
-	len = ft_strlen(s);
-	arr = (char *)malloc(len + 1);
-	if (arr == NULL)
-		return (NULL);
-	while (i < len)
-	{
-		arr[i] = s[i];
-		i++;
-	}
-	arr[i] = '\0';
-	return (arr);
-}
 
 size_t	ft_strlen(char *s)
 {
@@ -48,6 +28,8 @@ char	*ft_strjoin(char *s1, char *s2)
 	size_t	i;
 	size_t	q;
 
+	if (!s1 || !s2)
+		return (NULL);
 	res = malloc((ft_strlen(s1) + ft_strlen(s2) + 1) * sizeof(char));
 	if (!res)
 		return (NULL);
