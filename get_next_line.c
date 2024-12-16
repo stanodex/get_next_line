@@ -3,20 +3,23 @@
 /*                                                        :::      ::::::::   */
 /*   get_next_line.c                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: hceviz <marvin@42.fr>                      +#+  +:+       +#+        */
+/*   By: hceviz <hceviz@student.42warsaw.pl>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/12/15 17:19:42 by hceviz            #+#    #+#             */
-/*   Updated: 2024/12/15 17:34:39 by hceviz           ###   ########.fr       */
+/*   Created: 2024/12/16 06:58:29 by hceviz            #+#    #+#             */
+/*   Updated: 2024/12/16 13:00:18 by hceviz           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "get_next_line.h"
 
-//track null terminator
-// if (!stash[0]) // to return null when you
-//try to read file with just newline without character
-// stash = malloc(0); //check the reliability
-char	*get_myline(int fd, char *stash)
+//check bytes_read > 0 side
+//line 80 is checking if it is ended cuz of \0 or \n
+// it is tricky cuz if it is \n it iterates 1 more to 
+// reach after newline
+// used int deliberately for i's and j's because 
+//BUFFER_SIZE has int type by default
+
+char	*fill_buffer(int fd, char *stash)
 {
 	int		bytes_read;
 	char	*buff;
@@ -25,33 +28,31 @@ char	*get_myline(int fd, char *stash)
 	if (!buff)
 		return (NULL);
 	bytes_read = 1;
-	while (!ft_strchr(buff, '\n'))
+	while (bytes_read > 0 && !ft_strchr(stash, '\n'))
 	{
 		bytes_read = read(fd, buff, BUFFER_SIZE);
 		if (bytes_read == -1)
 			return (free(buff), free(stash), NULL);
-		else if (bytes_read == 0)
-			break ;
 		buff[bytes_read] = '\0';
-		if (!stash)
-			stash = malloc(0);
 		stash = ft_strjoin(stash, buff);
+		if (!stash)
+			return (NULL);
 	}
 	free(buff);
 	return (stash);
 }
 
-char	*return_myline(char *stash)
+char	*extract_line(char *stash)
 {
 	char	*line;
 	size_t	i;
 
-	if (!stash[0])
-		return (NULL);
 	i = 0;
+	if (!stash)
+		return (NULL);
 	while (stash[i] && stash[i] != '\n')
 		i++;
-	if (stash[i] == '\n')
+	if (stash[i]) // stash[i]
 		i++;
 	line = malloc(i + 1);
 	if (!line)
@@ -68,29 +69,33 @@ char	*return_myline(char *stash)
 	return (line);
 }
 
-char	*after_next_line(char *stash)
+char	*after_newline(char *stash)
 {
-	char	*new_stash;
+	char	*after;
 	size_t	i;
-	size_t	j;
+	int		j;
 
 	i = 0;
+	j = 0;
+	if (!stash[0])
+		return (NULL);
+	/*if (!ft_strchr(stash, '\n'))
+		return (free(stash), NULL);*/
 	while (stash[i] && stash[i] != '\n')
 		i++;
+	if (stash[i])
+		i++;
+	after = malloc(ft_strlen(stash) - i + 1);
+	if (!after)
+		return (NULL);
 	if (stash[i] == '\n')
 		i++;
-	new_stash = malloc(ft_strlen(stash) - i + 1);
-	if (!new_stash)
-		return (NULL);
-	j = 0;
-	while (stash[i + j])
-	{
-		new_stash[j] = stash[i + j];
-		j++;
-	}
-	new_stash[j] = '\0';
+	while (stash[i])
+		after[j++] = stash[i++];
+	after[j] = '\0';
 	free(stash);
-	return (new_stash);
+	stash = NULL;
+	return (after);
 }
 
 char	*get_next_line(int fd)
@@ -98,44 +103,12 @@ char	*get_next_line(int fd)
 	static char	*stash;
 	char		*line;
 
-	if (fd < 0 || BUFFER_SIZE < 0 || BUFFER_SIZE > 4294967295)
+	if (fd < 0 || BUFFER_SIZE <= 0 || BUFFER_SIZE >= 2147483647)
 		return (NULL);
-	stash = get_myline(fd, stash);
+	stash = fill_buffer(fd, stash);
 	if (!stash)
 		return (NULL);
-	line = return_myline(stash);
-	if (!line)
-	{
-		stash = line;
-		return (stash);
-	}
-	stash = after_next_line(stash);
+	line = extract_line(stash);
+	stash = after_newline(stash);
 	return (line);
 }
-/*
-int main(void)
-{
-    char *line;
-    int fd;
-	int x = 3;
-
-    // Test 1: Valid file with multiple lines
-    printf("Test 1: Reading from a valid file (sample.txt)\n");
-    fd = open("sample.txt", O_RDONLY);
-    if (fd == -1)
-    {
-        perror("Error opening sample.txt");
-        return (1);
-    }
-
-    int line_number = 1;
-    while (x > 0)
-    {
-		line = get_next_line(fd);
-        printf("Line %d: %s", line_number++, line);
-		x--;
-	}
-    close(fd);
-	return (1);
-}
-*/
