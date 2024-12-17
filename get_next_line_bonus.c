@@ -1,25 +1,22 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   get_next_line.c                                    :+:      :+:    :+:   */
+/*   get_next_line_bonus.c                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: hceviz <hceviz@student.42warsaw.pl>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/12/16 06:58:29 by hceviz            #+#    #+#             */
-/*   Updated: 2024/12/17 05:57:27 by hceviz           ###   ########.fr       */
+/*   Created: 2024/12/17 04:08:22 by hceviz            #+#    #+#             */
+/*   Updated: 2024/12/17 06:14:06 by hceviz           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "get_next_line.h"
+#include "get_next_line_bonus.h"
 
-//check bytes_read > 0 side
-//line 80 is checking if it is ended cuz of \0 or \n
-// it is tricky cuz if it is \n it iterates 1 more to 
-// reach after newline
-// used int deliberately for i's and j's because 
-//BUFFER_SIZE has int type by default
-// in after_line and extract_line it checks !stash if the
-// buff filled successfully or not
+//stash[1024] prevent to exceed the limit of fd
+//i got this 1024 from ulimit -n
+// 1024 is soft limit
+//buff[bytes_read] = '\0' otherwise it cannot stop 
+//iterating in ft_strjoin
 
 char	*fill_buffer(int fd, char *stash)
 {
@@ -102,15 +99,15 @@ char	*after_newline(char *stash)
 
 char	*get_next_line(int fd)
 {
-	static char	*stash;
+	static char	*stash[1024];
 	char		*line;
 
-	if (fd < 0 || BUFFER_SIZE <= 0 || BUFFER_SIZE > INT_MAX)
+	if (fd < 0 || fd > 1024 || BUFFER_SIZE <= 0 || BUFFER_SIZE > INT_MAX)
 		return (NULL);
-	stash = fill_buffer(fd, stash);
-	if (!stash)
+	stash[fd] = fill_buffer(fd, stash[fd]);
+	if (!stash[fd])
 		return (NULL);
-	line = extract_line(stash);
-	stash = after_newline(stash);
+	line = extract_line(stash[fd]);
+	stash[fd] = after_newline(stash[fd]);
 	return (line);
 }
